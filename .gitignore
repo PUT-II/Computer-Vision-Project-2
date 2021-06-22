@@ -134,3 +134,5 @@ dmypy.json
 .idea/Computer-Vision.iml
 .idea/misc.xml
 .idea/runConfigurations/main.xml
+data/
+pickled_objects/
