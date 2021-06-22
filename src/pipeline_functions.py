@@ -2,6 +2,21 @@ import cv2 as cv
 import numpy as np
 
 
+def remove_grid_lines(img: np.ndarray) -> np.ndarray:
+    denoised = cv.fastNlMeansDenoising(img, None, 30, 5, 21)
+
+    sobelx = cv.Sobel(denoised, cv.CV_8U, 1, 0, ksize=3)
+    sobely = cv.Sobel(denoised, cv.CV_8U, 0, 1, ksize=3)
+
+    sobelx = cv.fastNlMeansDenoising(sobelx, None, 15, 5, 21)
+    sobely = cv.fastNlMeansDenoising(sobely, None, 15, 5, 21)
+
+    sobel = cv.add(sobelx, sobely)
+    _, sobel = cv.threshold(sobel, 32, 255, cv.THRESH_BINARY)
+
+    return sobel
+
+
 def straighten_page(img_: np.ndarray) -> np.ndarray:
     # Denoise image to improve contour detection
     # https://docs.opencv.org/master/d1/d79/group__photo__denoise.html#ga4c6b0031f56ea3f98f768881279ffe93
