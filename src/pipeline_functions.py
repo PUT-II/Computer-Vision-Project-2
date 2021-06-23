@@ -3,16 +3,21 @@ import numpy as np
 
 
 def remove_grid_lines(img: np.ndarray) -> np.ndarray:
-    denoised = cv.fastNlMeansDenoising(img, None, 30, 5, 21)
+    sobel = None
+    for i in range(20, 40):
+        image = cv.fastNlMeansDenoising(img, None, i, 5, 21)
 
-    sobelx = cv.Sobel(denoised, cv.CV_8U, 1, 0, ksize=3)
-    sobely = cv.Sobel(denoised, cv.CV_8U, 0, 1, ksize=3)
+        sobelx = cv.Sobel(image, cv.CV_8U, 1, 0, ksize=3)
+        sobely = cv.Sobel(image, cv.CV_8U, 0, 1, ksize=3)
 
-    sobelx = cv.fastNlMeansDenoising(sobelx, None, 15, 5, 21)
-    sobely = cv.fastNlMeansDenoising(sobely, None, 15, 5, 21)
+        sobelx = cv.fastNlMeansDenoising(sobelx, None, 15, 5, 21)
+        sobely = cv.fastNlMeansDenoising(sobely, None, 15, 5, 21)
 
-    sobel = cv.add(sobelx, sobely)
-    _, sobel = cv.threshold(sobel, 32, 255, cv.THRESH_BINARY)
+        sobel = cv.add(sobelx, sobely)
+        _, sobel = cv.threshold(sobel, 32, 255, cv.THRESH_BINARY)
+
+        if (np.count_nonzero(sobel) / (sobel.shape[0] * sobel.shape[1])) < 0.0221:
+            break
 
     return sobel
 
