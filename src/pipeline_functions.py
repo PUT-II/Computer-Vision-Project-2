@@ -3,18 +3,37 @@ import numpy as np
 
 
 def remove_grid_lines(img: np.ndarray) -> np.ndarray:
-    denoised = cv.fastNlMeansDenoising(img, None, 30, 5, 21)
+    sobel = None
+    for i in range(20, 40, 5):
+        image = cv.fastNlMeansDenoising(img, None, i, 5, 21)
 
-    sobelx = cv.Sobel(denoised, cv.CV_8U, 1, 0, ksize=3)
-    sobely = cv.Sobel(denoised, cv.CV_8U, 0, 1, ksize=3)
+        sobelx = cv.Sobel(image, cv.CV_8U, 1, 0, ksize=3)
+        sobely = cv.Sobel(image, cv.CV_8U, 0, 1, ksize=3)
 
-    sobelx = cv.fastNlMeansDenoising(sobelx, None, 15, 5, 21)
-    sobely = cv.fastNlMeansDenoising(sobely, None, 15, 5, 21)
+        sobelx = cv.fastNlMeansDenoising(sobelx, None, 15, 5, 21)
+        sobely = cv.fastNlMeansDenoising(sobely, None, 15, 5, 21)
 
-    sobel = cv.add(sobelx, sobely)
-    _, sobel = cv.threshold(sobel, 32, 255, cv.THRESH_BINARY)
+        sobel = cv.add(sobelx, sobely)
+        _, sobel = cv.threshold(sobel, 32, 255, cv.THRESH_BINARY)
 
-    return sobel
+        if (np.count_nonzero(sobel) / (sobel.shape[0] * sobel.shape[1])) < 0.02:
+            break
+
+    kernel = np.ones((1, 8), np.uint8)
+    erosion_1 = cv.erode(sobel, kernel, iterations=10)
+    kernel = np.ones((5, 80), np.uint8)
+    erosion_1 = cv.dilate(erosion_1, kernel, iterations=10)
+
+    kernel = np.ones((8, 1), np.uint8)
+    erosion_2 = cv.erode(sobel, kernel, iterations=20)
+    kernel = np.ones((80, 5), np.uint8)
+    erosion_2 = cv.dilate(erosion_2, kernel, iterations=10)
+
+    mask = np.add(erosion_1, erosion_2)
+    mask = cv.bitwise_not(mask)
+    sobel_no_border = cv.bitwise_and(sobel, mask)
+
+    return sobel_no_border
 
 
 def straighten_page(img_: np.ndarray) -> np.ndarray:
