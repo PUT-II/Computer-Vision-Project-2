@@ -95,4 +95,4 @@ def __four_point_transform(image_, rect_):
 
     moments = cv.getPerspectiveTransform(rect_, dst)
     warped = cv.warpPerspective(image_, moments, (max_width, max_height))
-    return warped
+    return warped, moments
