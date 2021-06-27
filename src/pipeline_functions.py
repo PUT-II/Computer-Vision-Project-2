@@ -2,6 +2,19 @@ import cv2 as cv
 import numpy as np
 
 
+def create_mask(mask_shape: tuple, output_shape: tuple, rows: list, moments) -> np.ndarray:
+    mask = np.zeros(mask_shape, dtype=np.uint8)
+    for i, row in enumerate(rows):
+        for col in row['cols']:
+            start_point = (col['from'], row['from'])
+            end_point = (col['to'], row['to'])
+            mask = cv.line(mask, start_point, end_point, (i + 1,), 3)
+
+    inv_moments = np.linalg.pinv(moments)
+    warped_mask = cv.warpPerspective(mask, inv_moments, output_shape)
+    return warped_mask
+
+
 def remove_grid_lines(img: np.ndarray) -> np.ndarray:
     sobel = None
     for i in range(20, 40, 5):
