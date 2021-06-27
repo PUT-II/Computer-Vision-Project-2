@@ -10,10 +10,6 @@ def segment_to_digits(segment: np.array) -> List[np.array]:
     non_zero_y, non_zero_x = np.where(segment > 0)
     non_zero_points = np.array(list(zip(non_zero_x, non_zero_y)))
 
-    plt.scatter(non_zero_points[:, 0], non_zero_points[:, 1])
-    plt.gca().invert_yaxis()
-    plt.show()
-
     digits_coord = []
     groups = []
     # clt = DBSCAN(min_samples=30, eps=5, n_jobs=-1)
@@ -46,7 +42,7 @@ def segment_to_digits(segment: np.array) -> List[np.array]:
     return digits
 
 
-def digit_to_mnist_format(digits: List[np.array]):
+def digits_to_mnist_format(digits: List[np.array]):
     from cv2 import resize, INTER_AREA, copyMakeBorder, BORDER_CONSTANT, dilate
     import math
 
