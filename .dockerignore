@@ -1,0 +1,8 @@
+venv/
+data/
+main_notebooks/
+test_notebooks/
+
+.gitignore
+LICENCE
+README.md
