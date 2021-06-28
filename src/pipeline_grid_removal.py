@@ -1,18 +1,7 @@
+from typing import Tuple
+
 import cv2 as cv
 import numpy as np
-
-
-def create_mask(mask_shape: tuple, output_shape: tuple, rows: list, moments) -> np.ndarray:
-    mask = np.zeros(mask_shape, dtype=np.uint8)
-    for i, row in enumerate(rows):
-        for col in row['cols']:
-            start_point = (col['from'], row['from'])
-            end_point = (col['to'], row['to'])
-            mask = cv.line(mask, start_point, end_point, (i + 1,), 3)
-
-    inv_moments = np.linalg.pinv(moments)
-    warped_mask = cv.warpPerspective(mask, inv_moments, output_shape)
-    return warped_mask
 
 
 def remove_grid_lines(img: np.ndarray) -> np.ndarray:
@@ -20,13 +9,13 @@ def remove_grid_lines(img: np.ndarray) -> np.ndarray:
     for i in range(20, 40, 5):
         image = cv.fastNlMeansDenoising(img, None, i, 5, 21)
 
-        sobelx = cv.Sobel(image, cv.CV_8U, 1, 0, ksize=3)
-        sobely = cv.Sobel(image, cv.CV_8U, 0, 1, ksize=3)
+        sobel_x = cv.Sobel(image, cv.CV_8U, 1, 0, ksize=3)
+        sobel_y = cv.Sobel(image, cv.CV_8U, 0, 1, ksize=3)
 
-        sobelx = cv.fastNlMeansDenoising(sobelx, None, 15, 5, 21)
-        sobely = cv.fastNlMeansDenoising(sobely, None, 15, 5, 21)
+        sobel_x = cv.fastNlMeansDenoising(sobel_x, None, 15, 5, 21)
+        sobel_y = cv.fastNlMeansDenoising(sobel_y, None, 15, 5, 21)
 
-        sobel = cv.add(sobelx, sobely)
+        sobel = cv.add(sobel_x, sobel_y)
         _, sobel = cv.threshold(sobel, 32, 255, cv.THRESH_BINARY)
 
         if (np.count_nonzero(sobel) / (sobel.shape[0] * sobel.shape[1])) < 0.02:
@@ -49,7 +38,7 @@ def remove_grid_lines(img: np.ndarray) -> np.ndarray:
     return sobel_no_border
 
 
-def straighten_page(img_: np.ndarray) -> np.ndarray:
+def straighten_page(img_: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     # Denoise image to improve contour detection
     # https://docs.opencv.org/master/d1/d79/group__photo__denoise.html#ga4c6b0031f56ea3f98f768881279ffe93
     image = cv.fastNlMeansDenoising(img_, None, 20, 7, 21)
@@ -72,8 +61,8 @@ def straighten_page(img_: np.ndarray) -> np.ndarray:
 
     box_ordered = __order_points(box)
 
-    img_warped = __four_point_transform(img_, box_ordered)
-    return img_warped
+    img_warped, moments = __four_point_transform(img_, box_ordered)
+    return img_warped, moments
 
 
 # https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
