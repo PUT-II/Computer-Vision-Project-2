@@ -4,6 +4,7 @@
         <deployment type="dockerfile">
             <settings>
                 <option name="imageTag" value="piro_ocr"/>
+                <option name="buildOnly" value="true"/>
                 <option name="containerName" value="PiRO-OCR"/>
                 <option name="contextFolderPath" value="."/>
                 <option name="sourceFilePath" value="docker/Dockerfile"/>
