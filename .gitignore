@@ -136,3 +136,4 @@ dmypy.json
 .idea/runConfigurations/main.xml
 data/
 pickled_objects/
+output/

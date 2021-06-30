@@ -8,6 +8,7 @@ import numpy as np
 
 from pipeline_grid_removal import straighten_page, remove_grid_lines
 from pipeline_word_detection import get_clusters, get_segmentation_mask, get_row_descriptions, create_mask
+from src.pipeline_digit_recognition import load_clf_and_dataset, predict_segment
 
 
 def load_images(directory: str, image_count: int) -> List[np.ndarray]:
@@ -70,6 +71,19 @@ def main():
 
         mask_file_path = os.path.join(output_path, f"{i}-wyrazy.png")
         cv.imwrite(mask_file_path, warped_mask)
+
+    clf = load_clf_and_dataset('pickled_objects/clf_mnist.pickle')
+
+    for i in range(len(images_row_descriptions)):
+        row_descriptions = images_row_descriptions[i]
+        output = []
+        for r in row_descriptions:
+            number = r.words[-1].data
+            output.append(predict_segment(clf, number))
+
+        with open(os.path.join(output_path, f'{i}-indeksy.txt'), 'w') as f:
+            for o in output:
+                f.write(str(o) + "\n")
 
 
 if __name__ == '__main__':

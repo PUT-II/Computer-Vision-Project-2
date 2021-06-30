@@ -133,3 +133,10 @@ def predict_digits(clf, digits: List[np.array]) -> np.array:
         return []
     reshaped = np.array([d.reshape(784) for d in digits])
     return clf.predict(reshaped)
+
+
+def predict_segment(clf, segment: np.array):
+    digits = segment_to_digits(segment)
+    digits_to_mnist_format(digits)
+
+    return predict_digits(clf, digits)

@@ -3,7 +3,7 @@ LABEL student1="Adam Lewandowski" student2="Wojciech Lulek" student3="Tomasz Kil
 
 COPY ./src ./app/src
 COPY ./requirements.txt ./app/requirements.txt
-COPY ./pickled_objects ./app/pickled_objects
+COPY ./pickled_objects ./app/src/pickled_objects
 
 # Download updates and necessary libs
 RUN apt-get update
