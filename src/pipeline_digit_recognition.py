@@ -3,35 +3,62 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-def segment_to_digits(segment: np.array) -> List[np.array]:
-    from sklearn.cluster import DBSCAN, AgglomerativeClustering, OPTICS
+def segment_to_digits(segment: np.array, verbose: int = 0) -> List[np.array]:
+    from sklearn.cluster import OPTICS
     from statistics import mean
 
-    non_zero_y, non_zero_x = np.where(segment > 0)
-    non_zero_points = np.array(list(zip(non_zero_x, non_zero_y)))
+    nonzero_y, nonzero_x = np.where(segment > 0)
+    nonzero_points = np.array(list(zip(nonzero_x, nonzero_y)))
 
+    clt = OPTICS(min_samples=15,
+                 max_eps=6,
+                 xi=0.8,
+                 min_cluster_size=50)
+
+    try:
+        clt.fit(nonzero_points)
+    except Exception:
+        return []
+
+    labels = np.unique(clt.labels_)
+
+    if labels.shape[0] < 6:
+        clt.max_eps = 4
+        clt.fit(nonzero_points)
+        labels = np.unique(clt.labels_)
+    elif labels.shape[0] > 6:
+        clt.max_eps = 8
+        clt.fit(nonzero_points)
+        labels = np.unique(clt.labels_)
+
+    outliers = []
     digits_coord = []
-    groups = []
-    # clt = DBSCAN(min_samples=30, eps=5, n_jobs=-1)
-    # clt = AgglomerativeClustering(n_clusters=None, distance_threshold=300)
-    clt = OPTICS(min_samples=30, eps=10, min_cluster_size=100, cluster_method='dbscan')
-    clt.fit(non_zero_points)
+    digits_points = []
+    for label in labels:
+        points = nonzero_points[np.where(clt.labels_ == label)]
 
-    for label in np.unique(clt.labels_):
-        if label == -1:  # W grupie -1 są outliery
+        if label == -1:
+            outliers = points
             continue
 
-        points = non_zero_points[np.where(clt.labels_ == label)]
-        plt.scatter(points[:, 0], points[:, 1])
+        if verbose >= 1:
+            digits_points.append(points)
+
         digits_coord.append((min(points[:, 1]), max(points[:, 1] + 1), min(points[:, 0]), max(points[:, 0]) + 1))
 
-        groups.append(points)
-    plt.gca().invert_yaxis()
-    plt.show()
+    if verbose >= 1:
+        if len(outliers) > 2:
+            plt.scatter(outliers[:, 0], outliers[:, 1], c='black')
 
-    print("Groups count:", len(groups))
-    print("Min points in group:", min(g.shape[0] for g in groups))
-    print("Mean points in group:", mean(g.shape[0] for g in groups))
+        for points in digits_points:
+            plt.scatter(points[:, 0], points[:, 1])
+        plt.gca().invert_yaxis()
+        plt.show()
+
+        if verbose >= 2:
+            print("Groups count:", len(digits_points))
+            print("Min points in group:", min(g.shape[0] for g in digits_points))
+            print("Mean points in group:", mean(g.shape[0] for g in digits_points))
 
     digits_coord.sort(key=lambda x: x[2])
 
@@ -42,7 +69,7 @@ def segment_to_digits(segment: np.array) -> List[np.array]:
     return digits
 
 
-def digits_to_mnist_format(digits: List[np.array]):
+def digits_to_mnist_format(digits: List[np.array]) -> None:
     from cv2 import resize, INTER_AREA, copyMakeBorder, BORDER_CONSTANT, dilate
     import math
 
@@ -57,11 +84,12 @@ def digits_to_mnist_format(digits: List[np.array]):
 
         if d_width > d_height:
             d_proportion = d_height / d_width
-            d = resize(d, (max_size, int(max_size * d_proportion)), interpolation=INTER_AREA)
+            scaled_dim = max(1, int(max_size * d_proportion))
+            d = resize(d, (max_size, scaled_dim), interpolation=INTER_AREA)
         else:
-
             d_proportion = d_width / d_height
-            d = resize(d, (int(max_size * d_proportion), max_size), interpolation=INTER_AREA)
+            scaled_dim = max(1, int(max_size * d_proportion))
+            d = resize(d, (scaled_dim, max_size), interpolation=INTER_AREA)
 
         border_v = (sample_size - d.shape[0]) / 2
         border_v_T = math.ceil(border_v)
@@ -79,31 +107,29 @@ def digits_to_mnist_format(digits: List[np.array]):
         digits[i] = d
 
 
-def load_clf_and_dataset(clf_pickle_path: str, dataset_pickle_path: str) -> (object, Tuple):
+def load_clf_and_dataset(clf_pickle_path: str):
     import os
     import pickle
     from sklearn.datasets import fetch_openml
     from sklearn.svm import SVC
 
-    if not os.path.isfile(dataset_pickle_path):
-        X, y = data = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False)
-        with open(dataset_pickle_path, 'wb') as f:
-            pickle.dump(data, f)
-    else:
-        with open(dataset_pickle_path, 'rb') as f:
-            X, y = pickle.load(f)
-
     if not os.path.isfile(clf_pickle_path):
-        clf = SVC()
-        clf.fit(X, y)
+        X, y = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False)
+
+        # clf = SVC(C=10, gamma=0.001).fit(X, y)
+        clf = SVC().fit(X, y)
+
         with open(clf_pickle_path, 'wb') as f:
             pickle.dump(clf, f)
     else:
         with open(clf_pickle_path, 'rb') as f:
             clf = pickle.load(f)
-    return clf, (X, y)
+
+    return clf
 
 
 def predict_digits(clf, digits: List[np.array]) -> np.array:
+    if digits == []:
+        return []
     reshaped = np.array([d.reshape(784) for d in digits])
     return clf.predict(reshaped)

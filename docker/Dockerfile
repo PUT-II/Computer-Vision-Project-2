@@ -1,8 +1,9 @@
 FROM python:3.7
 LABEL student1="Adam Lewandowski" student2="Wojciech Lulek" student3="Tomasz Kiljańczyk"
 
-COPY ./src ./app/src
-COPY ./requirements.txt ./app/requirements.txt
+COPY ../src ./app/src
+COPY ../requirements.txt ./app/requirements.txt
+COPY ../pickled_objects ./app/pickled_objects
 
 # Download updates and necessary libs
 RUN apt-get update
