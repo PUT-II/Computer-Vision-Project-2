@@ -74,16 +74,16 @@ def main():
 
     clf = load_clf_and_dataset('pickled_objects/clf_mnist.pickle')
 
-    for i in range(len(images_row_descriptions)):
-        row_descriptions = images_row_descriptions[i]
+    for i, row_descriptions in enumerate(images_row_descriptions):
         output = []
         for r in row_descriptions:
             number = r.words[-1].data
-            output.append(predict_segment(clf, number))
+            pred = predict_segment(clf, number)
+
+            output.append("".join(pred))
 
         with open(os.path.join(output_path, f'{i}-indeksy.txt'), 'w') as f:
-            for o in output:
-                f.write(str(o) + "\n")
+            f.write("\n".join(output))
 
 
 if __name__ == '__main__':
