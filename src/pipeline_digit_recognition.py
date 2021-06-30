@@ -1,4 +1,5 @@
-from typing import List, Tuple
+from typing import List
+
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -116,7 +117,6 @@ def load_clf_and_dataset(clf_pickle_path: str):
     if not os.path.isfile(clf_pickle_path):
         X, y = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False)
 
-        # clf = SVC(C=10, gamma=0.001).fit(X, y)
         clf = SVC().fit(X, y)
 
         with open(clf_pickle_path, 'wb') as f:
@@ -129,7 +129,7 @@ def load_clf_and_dataset(clf_pickle_path: str):
 
 
 def predict_digits(clf, digits: List[np.array]) -> np.array:
-    if digits == []:
+    if not digits:
         return []
     reshaped = np.array([d.reshape(784) for d in digits])
     return clf.predict(reshaped)

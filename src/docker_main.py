@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 from typing import List
 
 import cv2 as cv
@@ -9,7 +10,7 @@ from pipeline_grid_removal import straighten_page, remove_grid_lines
 from pipeline_word_detection import get_clusters, get_segmentation_mask, get_row_descriptions, create_mask
 
 
-def load_images(directory: str, image_count: int = -1) -> List[np.ndarray]:
+def load_images(directory: str, image_count: int) -> List[np.ndarray]:
     images: List[np.ndarray] = []
 
     for filename_number in range(image_count):
@@ -19,9 +20,12 @@ def load_images(directory: str, image_count: int = -1) -> List[np.ndarray]:
         filename = f"{filename_number}.png"
         file_path = os.path.join(directory, filename)
 
-        img: np.ndarray = cv.imread(file_path, cv.IMREAD_GRAYSCALE)
+        print(file_path)
+        file_exists = os.path.exists(file_path)
+        print(f"File exists : {file_exists}")
 
-        images.append(img)
+        image: np.ndarray = cv.imread(file_path, cv.IMREAD_GRAYSCALE)
+        images.append(image)
 
     return images
 
@@ -30,12 +34,10 @@ def main():
     if len(sys.argv) < 2:
         print("Missing input path, image count and output path arguments")
         return
-
-    if len(sys.argv) < 3:
+    elif len(sys.argv) < 3:
         print("Missing image count and output path arguments")
         return
-
-    if len(sys.argv) < 4:
+    elif len(sys.argv) < 4:
         print("Missing output path argument")
         return
 
@@ -58,20 +60,16 @@ def main():
     segmentation_result_list = get_segmentation_mask(images, cluster_list)
     images_row_descriptions = get_row_descriptions(images, segmentation_result_list)
 
-    if os.path.exists(output_path):
-        os.removedirs(output_path)
-    os.mkdir(output_path)
+    Path(output_path).mkdir(exist_ok=True)
 
-    i = 0
-    for input_image, moments, row_description_list in zip(input_images, images_moments, images_row_descriptions):
+    loop_collection = enumerate(zip(input_images, images_moments, images_row_descriptions))
+    for i, (input_image, moments, row_description_list) in loop_collection:
         mask_shape = segmentation_result_list[0].image.shape
         output_shape = (input_image.shape[1], input_image.shape[0])
         warped_mask = create_mask(mask_shape, output_shape, row_description_list, moments)
 
         mask_file_path = os.path.join(output_path, f"{i}-wyrazy.png")
-
         cv.imwrite(mask_file_path, warped_mask)
-        i += 1
 
 
 if __name__ == '__main__':

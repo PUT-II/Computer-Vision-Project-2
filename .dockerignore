@@ -3,6 +3,10 @@ data/
 main_notebooks/
 test_notebooks/
 
+**/*.jpg
+*.jpg
+**/*.png
+*.png
 .gitignore
 LICENCE
 README.md
